@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Red Team Lab",
+    "description": "A simulated red team engagement targeting a fictional enterprise. Focused on social engineering, initial access, lateral movement, and report writing."
+  },
+  {
+    "title": "SIEM Automation Toolkit",
+    "description": "A Python-based toolkit to automate log parsing, normalization, and alert generation for popular SIEM platforms like Splunk and Elastic."
+  },
+  {
+    "title": "Phishing Simulation Platform",
+    "description": "Built a lightweight, modular platform to conduct phishing awareness training with metrics tracking and customizable payloads."
+  }
+]

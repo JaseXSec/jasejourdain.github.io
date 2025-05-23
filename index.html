@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Name | Cybersecurity Portfolio</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <link rel="icon" href="Favicon.ico" type="image/x-icon" />
+  <meta name="description" content="Cybersecurity portfolio of Your Name.">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      cursor: crosshair;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 2s ease;
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    #terminal {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #00aa00;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      text-align: left;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      background: #00aa00;
+      animation: blink 1s step-start infinite;
+    }
+
+    #copiedToast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 170, 0, 0.9);
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.375rem;
+      font-size: 1rem;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    #commandTerminal {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      background: rgba(0, 0, 0, 0.75);
+      color: #00ff00;
+      font-size: 0.8rem;
+      z-index: 60;
+      padding: 0.75rem 1rem;
+      display: none;
+      border-radius: 0.5rem;
+      max-width: 90%;
+      max-height: 40vh;
+      overflow: hidden;
+      box-shadow: 0 0 10px #00ff00;
+    }
+
+    #terminalLog {
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      display: flex;
+      flex-direction: column-reverse;
+      max-height: 30vh;
+    }
+
+    #terminalLog::-webkit-scrollbar {
+      display: none;
+    }
+
+    #terminalInputWrapper {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    #terminalInput {
+      background: transparent;
+      border: none;
+      color: #00ff00;
+      flex: 1;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    #terminalInput::placeholder {
+      color: rgba(0, 255, 0, 0.3);
+      font-style: italic;
+    }
+
+    .terminal-line {
+      margin: 0.15rem 0;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 640px) {
+      #terminal {
+        font-size: 0.8rem;
+        top: 0.5rem;
+        left: 0.5rem;
+      }
+      main {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-black text-zinc-100 antialiased flex items-center justify-center px-4">
+
+<canvas id="matrixCanvas"></canvas>
+<div id="terminal"><div id="terminalText"></div></div>
+<div id="copiedToast">Copied to clipboard</div>
+<div id="skipHint" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 text-green-300 text-sm z-40">
+  Press ENTER to skip
+</div>
+
+
+<div id="commandTerminal">
+  <div id="terminalLog"></div>
+  <div id="terminalInputWrapper">
+    <span>user@cyberhost:~$</span>
+    <input id="terminalInput" type="text" autocomplete="off" placeholder="Type 'help'" />
+  </div>
+</div>
+
+<main class="w-full max-w-3xl text-center drop-shadow-lg">
+  <h1 class="text-4xl font-bold mb-4">Hey, I'm Jase.</h1>
+  <p class="text-lg mb-8">Cybersecurity student and IT professional with an interest in offensive security, threat hunting, digital forensics, network analysis, and homelabbing.</p>
+  <nav class="mb-12">
+    <ul class="flex flex-wrap justify-center gap-6">
+        <li><a href="projects.html" class="text-green-300 underline hover:text-white transition">Projects</a></li>
+      <li><a href="#about" class="text-green-300 underline hover:text-white transition">About Me</a></li>
+    </ul>
+  </nav>
+  <section id="projects" class="mb-12 text-left">
+    <h2 class="text-2xl font-semibold mb-4 text-center">Projects</h2>
+    <ul class="space-y-3">
+      <li><strong>Red Team Lab</strong> — Simulated engagement against a fictional company. [<a href="#" class="text-green-300 underline hover:text-white transition">read more</a>]</li>
+    </ul>
+  </section>
+  <section id="contact">
+    <h2 class="text-2xl font-semibold mb-4">Contact</h2>
+    <p>Email: <a id="email" href="#" onclick="copyEmail()" class="text-green-300 underline hover:text-white transition">contact@jasejourdain.com</a></p>
+    <p class="mt-2 text-sm text-zinc-400">Want a copy of my résumé? Feel free to email me directly.</p>
+  </section>
+</main>
+
+<script>
+  const terminalText = document.getElementById('terminalText');
+  const main = document.querySelector('main');
+  const canvas = document.getElementById('matrixCanvas');
+  let skipAnimation = false;
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('terminal')) {
+    skipAnimation = true;
+    showMainUI();
+  }
+});
+
+function showMainUI() {
+  main.style.opacity = 1;
+  canvas.style.display = 'block';
+  requestAnimationFrame(() => {
+    canvas.style.opacity = '1';
+  });
+  const terminal = document.getElementById('terminal');
+  if (terminal) terminal.remove();
+  document.getElementById('commandTerminal').style.display = 'block';
+  document.getElementById('skipHint').remove();
+  startMatrix();
+  setupCLI();
+}
+
+
+  const lines = [
+    { user: true, text: 'connect portfolio --secure' },
+    { user: false, text: 'connecting...' },
+    { user: false, text: 'access granted.' },
+    { user: false, text: 'loading interface...' }
+  ];
+
+  const now = new Date().toUTCString();
+  terminalText.innerHTML = `Session started: ${now}`;
+
+  function typeLine(line, callback) {
+    const div = document.createElement('div');
+    const prompt = line.user ? 'user@cyberhost:~$ ' : '';
+    const contentSpan = document.createElement('span');
+    div.innerHTML = prompt;
+    div.appendChild(contentSpan);
+    if (line.user) {
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      cursor.innerHTML = '&nbsp;';
+      div.appendChild(cursor);
+      terminalText.appendChild(div);
+      let i = 0;
+      function typeChar() {
+        if (i < line.text.length) {
+          contentSpan.innerHTML += line.text.charAt(i);
+          i++;
+          setTimeout(typeChar, 60);
+        } else {
+          cursor.remove();
+          callback();
+        }
+      }
+      typeChar();
+    } else {
+      contentSpan.textContent = line.text;
+      terminalText.appendChild(div);
+      setTimeout(callback, 500);
+    }
+  }
+
+  function typeLines(lines, index = 0) {
+    if (skipAnimation || index >= lines.length) {
+  showMainUI();
+  return;
+}
+
+    typeLine(lines[index], () => typeLines(lines, index + 1));
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+const forceAnimation = urlParams.get('from') === 'projects';
+
+if (!sessionStorage.getItem('visited') || forceAnimation) {
+  setTimeout(() => {
+    typeLines(lines);
+    sessionStorage.setItem('visited', 'true');
+  }, 1000);
+} else {
+  // Skip animation, load interface immediately
+  main.style.opacity = 1;
+  canvas.style.display = 'block';
+  requestAnimationFrame(() => {
+    canvas.style.opacity = '1';
+  });
+  document.getElementById('terminal').remove();
+  document.getElementById('commandTerminal').style.display = 'block';
+  startMatrix();
+  setupCLI();
+}
+
+
+  function startMatrix() {
+    const ctx = canvas.getContext('2d');
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+    const letters = '01';
+    const fontSize = 14;
+    const columns = Math.ceil(canvas.width / fontSize);
+    const drops = Array.from({ length: columns }, () => 1);
+    function draw() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0, 170, 0, 0.25)';
+      ctx.font = fontSize + 'px JetBrains Mono, monospace';
+      for (let i = 0; i < drops.length; i++) {
+        const text = letters.charAt(Math.floor(Math.random() * letters.length));
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    }
+    setInterval(draw, 75);
+  }
+
+  function copyEmail() {
+    navigator.clipboard.writeText('contact@jasejourdain.com');
+    const toast = document.getElementById('copiedToast');
+    toast.style.opacity = 1;
+    setTimeout(() => { toast.style.opacity = 0; }, 1500);
+  }
+
+  function setupCLI() {
+    const input = document.getElementById('terminalInput');
+    const log = document.getElementById('terminalLog');
+    const history = [];
+    let historyIndex = -1;
+
+    const asciiArts = [
+      `  (\\_/)\n ( •_•)\n / >🍪 Want a cookie?`,
+      `  ╔═══╗ ♪\n  ║███║ ♫\n  ║ (●) ♫\n  ╚═══╝♪♪`,
+      `   .-''''-.\n  /  .--.  \\\n /  /    \\  \\\n |  |    |  |\n \\  \\.__./  /\n  '.__.__.'`,
+      `  ,     ,\n (\\____/)\n (_oo_)\n  (O  O)\n /   *   \\\n \\__\\_/__/`,
+      `    |\\      _,,,---,,_\nZZZzz /,` + "`" + `.-'` + "`" + `'    -.  ;-;;,_\n     |,4-  ) )-,_. ,\\ (  ` + "`" + `'-'\n    '---''(_/--'  \`-'\\_)`,
+      `      /\\_/\\\n     ( o.o )\n      > ^ <\n   Meow meow!`,
+      `    ___\n   /   \\\n  | * * |\n   \\___/\n    |\n   /|\\\n   / \\\n Robot friend!`,
+      `  .-""""-.\n /        \\\n|  X    X  |\n|     <    |\n \\   ---  /\n  '-.....-'`,
+      `     ____\n    /    \\\n   | ^  ^ |\n   |  __  |\n    \\____/\n Square head!`,
+      `   ,~~.\n  (  6 )-_,\n (  _\`-'  )\n /   \`    \\\n(   )     )\n\\   _    /\n \\  /   /\n  \`\~\~\~'`,
+      `      .-\"\"\"\"-.\n     /        \\\n    |    ..    |\n    |   (__)   |\n     \\        /\n      '-____-'`,
+      `   o   o   o\n    \\ | /\n     \\|/\n   ---+---\n     /|\\\n    / | \\\n   o  o  o`,
+      `    ♪ ♫ ♪ ♫\n      ♪ ♫\n   ♫ ♪ ♫ ♪ ♫\n      ♪ ♫\n    ♫ ♪ ♫`,
+      `   ⚡ ⚡ ⚡\n  ⚡ POWER ⚡\n   ⚡ ⚡ ⚡`,
+      `    🚀\n   /|\\\n  / | \\\n    |\n Blast off!`,
+      `  ༼ つ ◕_◕ ༽つ\n Give energy!`,
+      `    (╯°□°）╯︵ ┻━┻\n Table flip!`,
+      `   ┬─┬ ノ( ゜-゜ノ)\n Put it back...`,
+      `    ¯\\_(ツ)_/¯\n     Shrug`,
+      `   ಠ_ಠ\n Look of disapproval`,
+      `    ( ͡° ͜ʖ ͡°)\n   Lenny face`,
+      `      /\\_____/\\\n     /  o   o  \\\n    ( ==  ^  == )\n     )         (\n    (           )\n   ( (  )   (  ) )\n  (__(__)___(__)__)`,
+      `       ^__^\n       (oo)\\_______\n       (__)\\       )\\/\\\n           ||----w |\n           ||     ||`,
+      `    .-\"\"\"\"-.\n   /        \\\n  |  ^    ^  |\n  |     >    |\n   \\   ___  /\n    '-._.-'`,
+      `     /|_/|\n    (  . .)\n     )   (\n    (  v  )\n   ^^     ^^`,
+      `   ___\n  (o o)\n   | |\n  _| |_\n (_____)`,
+      `    /\\_/\\\n   ( ^.^ )\n    )_v_(\n   ^^   ^^`,
+      `  ___________\n < Hello! >\n -----------\n        \\\n         \\\n          ^__^\n          (oo)\\_______\n          (__)\\       )\\/\\\n              ||----w |\n              ||     ||`,
+      `     _____\n    /     \\\n   | () () |\n    \\  ^  /\n     |||||\n     |||||\n   Welcome!`,
+      `    ♠ ♣ ♥ ♦\n   ♦ ♥ ♣ ♠\n  ♣ ♠ ♦ ♥\n Card shuffle!`,
+      `   🎯 TARGET 🎯\n     ACQUIRED\n   ============`,
+      `      .-.      \n     (o.o)     \n      \_/      \n     /   \\     \n    /     \\    \n   Stay alert!`,
+      `    ████████\n    █      █\n    █  ░░  █\n    █  ░░  █  \n    █      █\n    ████████\n  Loading...`,
+      `   ┌─────────┐\n   │ SUCCESS │\n   └─────────┘\n      ✓ ✓ ✓`,
+      `    ERROR 404\n   ┌─────────┐\n   │ X  X  X │\n   │    ?    │\n   └─────────┘`,
+      `      .-.-.   \n     /     \\  \n    | ◉   ◉ |\n    |   ω   |\n     \\_____/`,
+      `     ____\n    |    |\n    | 👁 |\n    |    |\n    |____|\n  Watching...`,
+      `   ╔══════════╗\n   ║ FIREWALL ║\n   ║  ACTIVE  ║\n   ╚══════════╝\n     🔥🔥🔥`,
+      `    ENCRYPTED\n   ╔═══════╗\n   ║ █████ ║\n   ║ █▓▓█ ║\n   ║ █████ ║\n   ╚═══════╝\n     🔐`,
+      `   ⚠️  WARNING  ⚠️\n  INTRUSION DETECTED\n    🚨 🚨 🚨\n   TAKE COVER!`,
+      `      SECURE\n     ╔═══╗\n     ║ ✓ ║\n     ╚═══╝\n    Connected`,
+      `   ⚡ SCANNING ⚡\n   [████████████]\n   100% Complete\n     All clear!`,
+      `    PENTESTING\n   /\\_/\\_/\\_/\\\n  <           >\n   \\_\\_\\_\\_\\_/\n   Finding bugs...`,
+      `     PAYLOAD\n    ┌─────────┐\n    │ ███████ │\n    │ █ RCE █ │\n    │ ███████ │\n    └─────────┘\n     Deployed!`,
+      `    VPN STATUS\n   ╔═══════════╗\n   ║ CONNECTED ║\n   ║    🔒     ║\n   ╚═══════════╝\n   Anonymous mode`,
+      `     HACKER\n    ┌─────────┐\n    │ ░░░░░░░ │\n    │ ░ ◉ ◉ ░ │\n    │ ░░░ω░░░ │\n    └─────────┘`,
+      `    COFFEE.EXE\n   ╔═══════════╗\n   ║ ████████  ║\n   ║ Loading...║\n   ╚═══════════╝\n    ☕ Required!`,
+      `   🐧 LINUX 🐧\n    POWERED\n   ___________\n  |  ^     ^  |\n  | (  ) (  ) |\n  |     <     |\n  |   \\___/   |\n   -----------`,
+      `     MATRIX\n   ╔═══════════╗\n   ║ 10110101  ║\n   ║ 01011010  ║\n   ║ 11010011  ║\n   ╚═══════════╝\n   You are here`,
+      `    TERMINAL\n   ╔═══════════╗\n   ║ C:\\>_     ║\n   ║           ║\n   ║           ║\n   ╚═══════════╝\n   Ready to hack`,
+      `      BUG\n     /   \\\n    | o o |\n     \\ V /\n      )|(\n     /   \\\n    /_____\\\n   Squashed!`,
+      `    EXPLOIT\n   ╔═══════════╗\n   ║ [CRITICAL]║\n   ║ CVE-2024  ║\n   ║ FOUND!    ║\n   ╚═══════════╝`,
+      `     SHELL\n    ┌─────────┐\n    │ root@$  │\n    │ #       │\n    └─────────┘\n   Access granted!`
+    ];
+
+    input.focus();
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const cmd = input.value.trim();
+        if (!cmd) return;
+        history.unshift(cmd);
+        historyIndex = -1;
+
+        const entry = document.createElement('div');
+        entry.className = 'terminal-line';
+        entry.innerText = `user@cyberhost:~$ ${cmd}`;
+        log.prepend(entry);
+
+        const response = document.createElement('div');
+        response.className = 'terminal-line';
+        const lowerCmd = cmd.toLowerCase();
+
+        // Helper function to create clickable links
+        function createClickableContent(content) {
+          response.innerHTML = content;
+          // Add click handlers to all links
+          const links = response.querySelectorAll('a');
+          links.forEach(link => {
+            link.style.textDecoration = 'underline';
+            link.style.color = '#00ff00';
+            link.style.cursor = 'pointer';
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              window.open(link.href, '_blank');
+            });
+          });
+        }
+
+        switch (lowerCmd) {
+          case 'whoami':
+            response.innerText = 'AVeryCoolPerson :)';
+            break;
+          case 'help':
+            response.innerText =
+              `Available commands:\n` +
+              `- whoami\n- help\n- clear\n- skills\n- experience\n- certs\n- projects\n` +
+              `- contact\n- ascii\n- uptime\n- banner\n- socials\n- motd`;
+            break;
+          case 'clear':
+            log.innerHTML = '';
+            input.value = '';
+            return;
+          case 'skills':
+            response.innerText = 'Skills:\n- Red Teaming\n- Threat Hunting\n- Digital Forensics\n- SIEM\n- Malware Analysis';
+            break;
+          case 'experience':
+            response.innerText = 'Experience:\n- CyberCorp (2023–2024): Security Analyst\n- ThreatOps (2022–2023): Red Team Intern';
+            break;
+          case 'certs':
+            createClickableContent(`Certifications:
+- <a href="https://www.offensive-security.com/pwk-oscp/">OSCP</a>
+- <a href="https://www.eccouncil.org/programs/certified-ethical-hacker-ceh/">CEH</a>
+- <a href="https://www.comptia.org/certifications/security">Security+</a>`);
+            break;
+          case 'projects':
+            createClickableContent(`Projects:
+- <a href="https://github.com/yourname/red-team-lab">Red Team Lab</a>
+- <a href="https://github.com/yourname/siem-automation">SIEM Automation</a>
+- <a href="https://github.com/yourname/phishing-toolkit">Phishing Toolkit</a>`);
+            break;
+          case 'contact':
+            createClickableContent(`Email: <a href="mailto:contact@jasejourdain.com">contact@jasejourdain.com</a>
+LinkedIn: <a href="https://www.linkedin.com/in/jase-jourdain-2353b6256">https://www.linkedin.com/in/jase-jourdain-2353b6256</a>`);
+            break;
+          case 'ascii':
+            const randomArt = asciiArts[Math.floor(Math.random() * asciiArts.length)];
+            response.innerText = randomArt;
+            break;
+          case 'uptime':
+            const uptime = Math.floor(performance.now() / 1000);
+            response.innerText = `Uptime: ${uptime} seconds`;
+            break;
+          case 'banner':
+            response.innerText = `
+ ██████╗██╗   ██╗██████╗ ███████╗██████╗ 
+██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗
+██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝
+██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗
+╚██████╗   ██║   ██████╔╝███████╗██║  ██║
+ ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝
+                                          
+███████╗███████╗ ██████╗██╗   ██╗██████╗ ██╗████████╗██╗   ██╗
+██╔════╝██╔════╝██╔════╝██║   ██║██╔══██╗██║╚══██╔══╝╚██╗ ██╔╝
+███████╗█████╗  ██║     ██║   ██║██████╔╝██║   ██║    ╚████╔╝ 
+╚════██║██╔══╝  ██║     ██║   ██║██╔══██╗██║   ██║     ╚██╔╝  
+███████║███████╗╚██████╗╚██████╔╝██║  ██║██║   ██║      ██║   
+╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝   ╚═╝      ╚═╝   
+                                                              
+            Welcome to the Cyber Security Portfolio
+`;
+            break;
+          case 'socials':
+            createClickableContent(`Socials:
+- GitHub: <a href="https://github.com/yourname">github.com/yourname</a>
+- Twitter: <a href="https://twitter.com/cyberyou">@cyberyou</a>
+- Blog: <a href="https://blog.yoursite.com">blog.yoursite.com</a>`);
+            break;
+          case 'motd':
+            response.innerText = 'Message of the Day: Stay sharp and stay secure!';
+            break;
+          default:
+            response.innerText = `command not found: ${cmd}`;
+            break;
+        }
+
+        log.prepend(response);
+        log.scrollTop = 0;
+        input.value = '';
+      } else if (e.key === 'ArrowUp') {
+        if (historyIndex < history.length - 1) {
+          historyIndex++;
+          input.value = history[historyIndex];
+        }
+      } else if (e.key === 'ArrowDown') {
+        if (historyIndex > 0) {
+          historyIndex--;
+          input.value = history[historyIndex];
+        } else {
+          historyIndex = -1;
+          input.value = '';
+        }
+      }
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+  });
+</script>
+</body>
+</html>
